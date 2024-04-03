@@ -1,24 +1,25 @@
-from flask import Flask, request, send_file
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import Response
 import qrcode
 import base64
 from io import BytesIO
 
-app = Flask(__name__)
+app = FastAPI()
 
 
-@app.route('/generate_qr_code', methods=['GET'])
-def generate_qr_code():
+@app.get('/generate_qr_code')
+async def generate_qr_code(request: Request, response: Response):
     try:
         # Получаем параметры из URL запроса
-        text = request.args.get('text')
-        size = int(request.args.get('size', 200))
-        image_format = request.args.get('format', 'PNG').upper()
+        text = request.query_params.get('text')
+        size = int(request.query_params.get('size', 200))
+        image_format = request.query_params.get('format', 'PNG').upper()
 
         if not text:
-            return 'Parameter "text" is required', 400
+            return Response(content='Parameter "text" is required', status_code=400)
 
         if image_format not in ['JPEG', 'PNG', 'BASE64']:
-            return 'Invalid image format', 400
+            return Response(content='Invalid image format', status_code=400)
 
         # Создаем QR-код
         qr = qrcode.make(text)
@@ -33,18 +34,14 @@ def generate_qr_code():
                 qr.save(buffer, format='PNG')
                 base64_encoded_img = base64.b64encode(
                     buffer.getvalue()).decode('utf-8')
-            return base64_encoded_img
+            return Response(content=base64_encoded_img, media_type='text/plain')
 
         # Иначе возвращаем изображение QR-кода в указанном формате
         with BytesIO() as buffer:
             qr.save(buffer, format=image_format)
             img_data = buffer.getvalue()
 
-        return send_file(BytesIO(img_data), mimetype=f'image/{image_format.lower()}')
+        return Response(content=img_data, media_type=f'image/{image_format.lower()}')
 
     except Exception as e:
-        return str(e), 500
-
-
-if __name__ == '__main__':
-    app.run()
+        return Response(content=str(e), status_code=500)
