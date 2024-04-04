@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import Response
 import qrcode
-import base64
 from io import BytesIO
 
 app = FastAPI()
@@ -18,7 +17,7 @@ async def generate_qr_code(request: Request, response: Response):
         if not text:
             return Response(content='Parameter "text" is required', status_code=400)
 
-        if image_format not in ['JPEG', 'PNG', 'BASE64']:
+        if image_format not in ['JPEG', 'PNG', 'WEBP']:
             return Response(content='Invalid image format', status_code=400)
 
         # Создаем QR-код
@@ -30,14 +29,6 @@ async def generate_qr_code(request: Request, response: Response):
         # Изменяем размер QR-кода, если указан параметр size
         if size != 200:
             img = img.resize((size, size))
-
-        # Если указан формат BASE64, возвращаем QR-код в формате base64
-        if image_format == 'BASE64':
-            with BytesIO() as buffer:
-                img.save(buffer, format='PNG')
-                base64_encoded_img = base64.b64encode(
-                    buffer.getvalue()).decode('utf-8')
-            return Response(content=base64_encoded_img, media_type='text/plain')
 
         # Иначе возвращаем изображение QR-кода в указанном формате
         with BytesIO() as buffer:
