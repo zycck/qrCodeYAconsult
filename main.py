@@ -20,17 +20,13 @@ async def generate_qr_code(request: Request, response: Response):
         if image_format not in ['JPEG', 'PNG', 'WEBP']:
             return Response(content='Invalid image format', status_code=400)
 
-        # Создаем QR-код
         qr = qrcode.make(text)
 
-        # Переводим QR-код в формат изображения
         img = qr.get_image()
 
-        # Изменяем размер QR-кода, если указан параметр size
         if size != 200:
             img = img.resize((size, size))
 
-        # Иначе возвращаем изображение QR-кода в указанном формате
         with BytesIO() as buffer:
             img.save(buffer, format=image_format)
             img_data = buffer.getvalue()
